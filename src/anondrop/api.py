@@ -9,10 +9,17 @@ from . import config
 from .exceptions import AnondropError, ServerError
 
 BASE_URL = "https://anondrop.net"
-USER_KEY = config.get_client_key()
 
 
 class Anondrop:
+    def _require_key(self) -> str:
+        key = config.get_client_key()
+
+        if not isinstance(key, str) or not key.strip():
+            raise AnondropError("Key missing")
+
+        return key
+
     def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
         try:
             response = httpx.request(
@@ -50,26 +57,24 @@ class Anondrop:
         return match.group(1)
 
     def files(self) -> str:
-        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
-            raise AnondropError("Key missing")
+        key = self._require_key()
 
         response = self._request(
             "GET",
             f"{BASE_URL}/files",
-            params={"key": USER_KEY},
+            params={"key": key},
         )
 
         return response.text
 
     def direct_upload(self, path: str):
-        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
-            raise AnondropError("Key missing")
+        key = self._require_key()
 
         with open(path, "rb") as file:
             response = self._request(
                 "POST",
                 f"{BASE_URL}/upload",
-                params={"key": USER_KEY},
+                params={"key": key},
                 files={"file": file},
             )
 
@@ -81,8 +86,7 @@ class Anondrop:
         return match.group(1)
 
     def remote_upload(self, url: str, filename: str) -> str:
-        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
-            raise AnondropError("Key missing")
+        key = self._require_key()
 
         chunks: list[str] = []
         aborted = False
@@ -92,7 +96,7 @@ class Anondrop:
                 "GET",
                 f"{BASE_URL}/remoteuploadurl",
                 params={
-                    "key": USER_KEY,
+                    "key": key,
                     "url": url,
                     "filename": filename,
                 },
@@ -124,8 +128,7 @@ class Anondrop:
         return match.group(1)
 
     def chunked_upload(self, path: str) -> str:
-        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
-            raise AnondropError("Key missing")
+        key = self._require_key()
 
         filename = Path(path).name
 
@@ -133,7 +136,7 @@ class Anondrop:
             "GET",
             f"{BASE_URL}/initiateupload",
             params={
-                "key": USER_KEY,
+                "key": key,
                 "filename": filename,
             },
         )
@@ -166,13 +169,12 @@ class Anondrop:
         return match.group(1)
 
     def delete_file(self, FILE_ID: str) -> str:
-        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
-            raise AnondropError("Key missing")
+        key = self._require_key()
 
         response = self._request(
             "POST",
             f"{BASE_URL}/delete/{FILE_ID}",
-            params={"key": USER_KEY},
+            params={"key": key},
         )
 
         match = re.search(r"^\s*deleted\s*$", response.text)
@@ -188,15 +190,14 @@ class Anondrop:
         *,
         metadata: Mapping[str, Any] | None = None,
     ) -> str:
-        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
-            raise AnondropError("Key missing")
+        key = self._require_key()
 
         data = dict(metadata or {})
 
         response = self._request(
             "POST",
             f"{BASE_URL}/editform/{file_id}",
-            params={"key": USER_KEY},
+            params={"key": key},
             json=data,
         )
 
