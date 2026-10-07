@@ -5,9 +5,11 @@ from typing import Any
 
 import httpx
 
+from . import config
 from .exceptions import AnondropError, ServerError
 
 BASE_URL = "https://anondrop.net"
+USER_KEY = config.get_client_key()
 
 
 class Anondrop:
@@ -47,27 +49,27 @@ class Anondrop:
 
         return match.group(1)
 
-    def files(self, key: str) -> str:
-        if not isinstance(key, str) or not key.strip():
+    def files(self) -> str:
+        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
             raise AnondropError("Key missing")
 
         response = self._request(
             "GET",
             f"{BASE_URL}/files",
-            params={"key": key},
+            params={"key": USER_KEY},
         )
 
         return response.text
 
-    def direct_upload(self, key: str, path: str):
-        if not isinstance(key, str) or not key.strip():
+    def direct_upload(self, path: str):
+        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
             raise AnondropError("Key missing")
 
         with open(path, "rb") as file:
             response = self._request(
                 "POST",
                 f"{BASE_URL}/upload",
-                params={"key": key},
+                params={"key": USER_KEY},
                 files={"file": file},
             )
 
@@ -78,8 +80,8 @@ class Anondrop:
 
         return match.group(1)
 
-    def remote_upload(self, key: str, url: str, filename: str) -> str:
-        if not isinstance(key, str) or not key.strip():
+    def remote_upload(self, url: str, filename: str) -> str:
+        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
             raise AnondropError("Key missing")
 
         chunks: list[str] = []
@@ -90,7 +92,7 @@ class Anondrop:
                 "GET",
                 f"{BASE_URL}/remoteuploadurl",
                 params={
-                    "key": key,
+                    "key": USER_KEY,
                     "url": url,
                     "filename": filename,
                 },
@@ -116,15 +118,13 @@ class Anondrop:
 
         if not match:
             if aborted:
-                raise AnondropError(
-                    "Remote upload failed: server closed the stream"
-                )
+                raise AnondropError("Remote upload failed: server closed the stream")
             raise AnondropError("Could not extract file link")
 
         return match.group(1)
 
-    def chunked_upload(self, path: str, key: str) -> str:
-        if not isinstance(key, str) or not key.strip():
+    def chunked_upload(self, path: str) -> str:
+        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
             raise AnondropError("Key missing")
 
         filename = Path(path).name
@@ -133,7 +133,7 @@ class Anondrop:
             "GET",
             f"{BASE_URL}/initiateupload",
             params={
-                "key": key,
+                "key": USER_KEY,
                 "filename": filename,
             },
         )
@@ -165,14 +165,14 @@ class Anondrop:
 
         return match.group(1)
 
-    def delete_file(self, FILE_ID: str, key: str) -> str:
-        if not isinstance(key, str) or not key.strip():
+    def delete_file(self, FILE_ID: str) -> str:
+        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
             raise AnondropError("Key missing")
 
         response = self._request(
             "POST",
             f"{BASE_URL}/delete/{FILE_ID}",
-            params={"key": key},
+            params={"key": USER_KEY},
         )
 
         match = re.search(r"^\s*deleted\s*$", response.text)
@@ -185,11 +185,10 @@ class Anondrop:
     def edit_file(
         self,
         file_id: str,
-        key: str,
         *,
         metadata: Mapping[str, Any] | None = None,
     ) -> str:
-        if not isinstance(key, str) or not key.strip():
+        if not isinstance(USER_KEY, str) or not USER_KEY.strip():
             raise AnondropError("Key missing")
 
         data = dict(metadata or {})
@@ -197,7 +196,7 @@ class Anondrop:
         response = self._request(
             "POST",
             f"{BASE_URL}/editform/{file_id}",
-            params={"key": key},
+            params={"key": USER_KEY},
             json=data,
         )
 
