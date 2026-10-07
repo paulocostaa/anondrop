@@ -1,0 +1,27 @@
+[project]
+name = "anondrop"
+version = "0.1.0"
+description = "A small Python client for the anondrop.net file hosting API"
+readme = "README.md"
+authors = [
+    { name = "Paulo Costa", email = "243433924+paulocostaa@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "httpx>=0.28.1",
+]
+
+[project.scripts]
+anondrop = "anondrop:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["uv_build>=0.12.21,<0.13.0"]
+build-backend = "uv_build"
