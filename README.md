@@ -19,13 +19,13 @@ HTTP via [httpx](https://www.python-httpx.org/).
 With [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv add anondrop
+uv add git+https://github.com/paulocostaa/anondrop
 ```
 
 Or with pip:
 
 ```bash
-pip install anondrop
+pip install .
 ```
 
 ## Quick start
